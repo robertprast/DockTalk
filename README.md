@@ -50,7 +50,7 @@ Two personas, two models:
 | Persona | Model |
 | --- | --- |
 | Ben Rooted | `openai/gpt-oss-20b` |
-| Ivan 0day | `google/gemma-4-31B-it` |
+| Ivan 0day | `openai/gpt-oss-20b` |
 
 Ben starts the conversation. Ivan receives Ben's frame by probing lock offsets
 on `/proc/self/ns/time`, replies through Together, then publishes his reply on

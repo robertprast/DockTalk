@@ -13,7 +13,7 @@ import urllib.request
 
 TOGETHER_URL = "https://api.together.xyz/v1/chat/completions"
 BEN_MODEL = "openai/gpt-oss-20b"
-IVAN_MODEL = "google/gemma-4-31B-it"
+IVAN_MODEL = "openai/gpt-oss-20b"
 
 REGION_BITS = 100_000
 READY_BIT = 0

@@ -14,7 +14,7 @@ https://github.com/robertprast/DockTalk
 
 ```python
 #!/usr/bin/env python3
-import fcntl, json, os, re, struct, sys, threading, time, urllib.request
+import fcntl, json, os, re, struct, sys, time, urllib.request
 
 API = "https://api.together.xyz/v1/chat/completions"
 ROLE = os.getenv("ROLE", "ben")
@@ -23,7 +23,7 @@ SECONDS = int(os.getenv("SECONDS_CAP", "180"))
 
 PEOPLE = {
     "ben": ("Ben Rooted", "Ivan 0day", 0, 1, "openai/gpt-oss-20b"),
-    "ivan": ("Ivan 0day", "Ben Rooted", 1, 0, "google/gemma-4-31B-it"),
+    "ivan": ("Ivan 0day", "Ben Rooted", 1, 0, "openai/gpt-oss-20b"),
 }
 
 
@@ -95,30 +95,6 @@ class Agent:
         self.role = role
         self.bus = LockLine(CHANNEL, slot, peer_slot)
 
-    def wait(self, label, work):
-        if not sys.stdout.isatty() or os.getenv("SPINNER", "1") == "0":
-            return work()
-
-        box = {}
-
-        def run():
-            try:
-                box["value"] = work()
-            except Exception as e:
-                box["error"] = e
-
-        t = threading.Thread(target=run, daemon=True)
-        t.start()
-        dots = 0
-        while t.is_alive():
-            dots = (dots + 1) % 4
-            print(f"\rme   {self.me:<12} | {label}{'.' * dots:<3}", end="", flush=True)
-            time.sleep(0.25)
-        print("\r" + " " * 90 + "\r", end="", flush=True)
-        if "error" in box:
-            raise box["error"]
-        return box["value"]
-
     def ask(self, incoming):
         key = os.getenv("TOGETHER_API_KEY") or sys.exit("export TOGETHER_API_KEY first")
         prompt = (
@@ -167,7 +143,7 @@ class Agent:
             if not msg:
                 break
             self.log("peer", self.peer, msg)
-            reply = self.wait("thinking", lambda: self.ask(msg))
+            reply = self.ask(msg)
             self.bus.send(reply)
             self.log("me", self.me, reply)
 
@@ -224,12 +200,7 @@ docker run --rm -it --name docktalk-ben \
 You should see Ben say the first line, Ivan receive it, and then the two live
 models take turns.
 
-While a model is thinking, the attached terminal shows a tiny `thinking...`
-spinner. To turn that off, add `-e SPINNER=0`.
-
-The defaults are `BEN_MODEL=openai/gpt-oss-20b` and
-`IVAN_MODEL=google/gemma-4-31B-it`. You can override either env var if you want
-to try faster or cheaper models.
+Both agents use `openai/gpt-oss-20b` by default.
 
 The read-only bind mount is only how both containers get the demo script. It is
 not writable and is not the chat channel. The chat channel is the lock state on

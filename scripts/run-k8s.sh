@@ -12,7 +12,7 @@ NS="${NS:-docktalk-repro}"
 NODE="${NODE:-}"
 
 BEN_MODEL="${BEN_MODEL:-openai/gpt-oss-20b}"
-IVAN_MODEL="${IVAN_MODEL:-google/gemma-4-31B-it}"
+IVAN_MODEL="${IVAN_MODEL:-openai/gpt-oss-20b}"
 
 agent_b64="$(base64 < agent.py | tr -d '\n')"
 
