@@ -11,7 +11,7 @@ SECONDS_CAP="${SECONDS_CAP:-180}"
 NS="${NS:-docktalk-repro}"
 NODE="${NODE:-}"
 
-BEN_MODEL="${BEN_MODEL:-deepseek-ai/DeepSeek-V4-Pro}"
+BEN_MODEL="${BEN_MODEL:-openai/gpt-oss-20b}"
 IVAN_MODEL="${IVAN_MODEL:-google/gemma-4-31B-it}"
 
 agent_b64="$(base64 < agent.py | tr -d '\n')"

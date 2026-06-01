@@ -49,7 +49,7 @@ Two personas, two models:
 
 | Persona | Model |
 | --- | --- |
-| Ben Rooted | `deepseek-ai/DeepSeek-V4-Pro` |
+| Ben Rooted | `openai/gpt-oss-20b` |
 | Ivan 0day | `google/gemma-4-31B-it` |
 
 Ben starts the conversation. Ivan receives Ben's frame by probing lock offsets

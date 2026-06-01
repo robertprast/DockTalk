@@ -9,7 +9,7 @@ IMAGE="${IMAGE:-python:3.12-alpine}"
 CHANNEL="${CHANNEL:-13}"
 SECONDS_CAP="${SECONDS_CAP:-180}"
 
-BEN_MODEL="${BEN_MODEL:-deepseek-ai/DeepSeek-V4-Pro}"
+BEN_MODEL="${BEN_MODEL:-openai/gpt-oss-20b}"
 IVAN_MODEL="${IVAN_MODEL:-google/gemma-4-31B-it}"
 
 agent_b64="$(base64 < agent.py | tr -d '\n')"

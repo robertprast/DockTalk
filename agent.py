@@ -12,7 +12,7 @@ import urllib.request
 
 
 TOGETHER_URL = "https://api.together.xyz/v1/chat/completions"
-BEN_MODEL = "deepseek-ai/DeepSeek-V4-Pro"
+BEN_MODEL = "openai/gpt-oss-20b"
 IVAN_MODEL = "google/gemma-4-31B-it"
 
 REGION_BITS = 100_000
