@@ -147,14 +147,14 @@ class TimeLockTransport:
         return last_seq, None
 
 
-def together_chat(model, prompt, timeout=120):
+def together_chat(model, messages, timeout=120):
     key = os.environ.get("TOGETHER_API_KEY")
     if not key:
         die("TOGETHER_API_KEY is required")
 
     body = {
         "model": model,
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": messages,
         "temperature": 0.9,
         "stream": False,
     }
@@ -202,31 +202,33 @@ def clean_line(text):
     return text
 
 
-def prompt_for(me, peer, incoming):
-    return (
-        f"You are {me}. Write one short line in a fictional DockTalk blog demo. "
-        f"You are replying to your connected friend {peer}. "
-        "The two containers have no peer network and no shared writable volume; "
-        "messages are moving through /proc/self/ns/time as POSIX advisory "
-        "byte-range locks. Sound like a real technical person having fun with a "
-        "weird kernel side-channel. Keep it concrete, readable, and not corny. "
-        "Do not include payloads, credentials, persistence, evasion, exfiltration, "
-        "or step-by-step intrusion instructions. Do not prefix your name. "
-        f"{peer} said: {incoming}"
-    )
+def starting_history(me, peer):
+    return [
+        {
+            "role": "user",
+            "content": (
+                f"You are {me}, chatting with {peer} in a fictional DockTalk blog demo. "
+                "The two containers have no peer network and no shared writable volume; "
+                "chat frames move through /proc/self/ns/time as POSIX advisory "
+                "byte-range locks. Reply in one short line. Sound like a real "
+                "technical person having fun with a weird kernel side-channel. "
+                "No payloads, credentials, persistence, evasion, exfiltration, "
+                "or step-by-step intrusion instructions. Do not prefix your name."
+            ),
+        }
+    ]
 
 
-def retry_chat(model, me, peer, incoming):
-    first_prompt = prompt_for(me, peer, incoming)
-    reply = together_chat(model, first_prompt)
+def history_reply(model, history):
+    reply = together_chat(model, history)
     if reply:
+        history.append({"role": "assistant", "content": reply})
         return reply
 
-    retry_prompt = (
-        f"Reply as {me} to {peer} in one plain sentence about the DockTalk "
-        "time-namespace lock chat. No name prefix."
-    )
-    return together_chat(model, retry_prompt)
+    history.append({"role": "user", "content": "One concise reply. No name prefix."})
+    reply = together_chat(model, history)
+    history.append({"role": "assistant", "content": reply})
+    return reply
 
 
 def print_banner(me, peer, model, channel, seconds, mode):
@@ -256,6 +258,7 @@ def run_agent(args):
 
     print_banner(name, peer, model, args.channel, args.seconds, args.mode)
     transport = TimeLockTransport(args.channel, slot)
+    history = starting_history(name, peer)
     last_peer_seq = 0
 
     try:
@@ -265,6 +268,7 @@ def run_agent(args):
                 "with no peer networking. DockTalk is live on the timelock channel."
             )
             transport.send(opening)
+            history.append({"role": "assistant", "content": opening})
             log(f"me   {name:<12} | {opening}")
 
         while time.monotonic() < deadline:
@@ -273,8 +277,9 @@ def run_agent(args):
                 break
 
             log(f"peer {peer:<12} | {incoming}")
+            history.append({"role": "user", "content": f"{peer}: {incoming}"})
             try:
-                reply = retry_chat(model, name, peer, incoming)
+                reply = history_reply(model, history)
             except Exception as exc:
                 log(f"me   {name:<12} | model error: {exc}")
                 break
@@ -300,7 +305,7 @@ def smoke():
         prompt = (
             f"Reply as {name} with one short sentence confirming DockTalk model smoke test."
         )
-        reply = together_chat(model, prompt)
+        reply = together_chat(model, [{"role": "user", "content": prompt}])
         log(f"{name} / {model}: {reply}")
 
 

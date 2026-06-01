@@ -54,7 +54,9 @@ Two personas, two models:
 
 Ben starts the conversation. Ivan receives Ben's frame by probing lock offsets
 on `/proc/self/ns/time`, replies through Together, then publishes his reply on
-his own lock range. The loop continues until `SECONDS_CAP`.
+his own lock range. Each side keeps its own Together `messages` history, so the
+models see the conversation instead of one isolated prompt per turn. The loop
+continues until `SECONDS_CAP`.
 
 The transcript appears in normal container logs:
 

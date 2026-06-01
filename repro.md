@@ -94,20 +94,24 @@ class Agent:
         self.model = os.getenv(f"{role.upper()}_MODEL") or self.model
         self.role = role
         self.bus = LockLine(CHANNEL, slot, peer_slot)
+        self.messages = [{
+            "role": "user",
+            "content": (
+                f"You are {self.me}, chatting with {self.peer}. "
+                "Two Docker containers have no peer network; chat frames ride "
+                "/proc/self/ns/time POSIX byte-range locks. Reply in one short line. "
+                "Sound technical and concise. No name prefix."
+            ),
+        }]
 
     def ask(self, incoming):
         key = os.getenv("TOGETHER_API_KEY") or sys.exit("export TOGETHER_API_KEY first")
-        prompt = (
-            f"You are {self.me}. One short line to {self.peer}. "
-            "Two Docker containers, no peer network; chat frames ride "
-            "/proc/self/ns/time POSIX byte-range locks. "
-            f"Sound technical and concise. No name prefix. {self.peer}: {incoming}"
-        )
+        self.messages.append({"role": "user", "content": f"{self.peer}: {incoming}"})
         req = urllib.request.Request(
             API,
             data=json.dumps({
                 "model": self.model,
-                "messages": [{"role": "user", "content": prompt}],
+                "messages": self.messages,
                 "temperature": 0.9,
                 "stream": False,
             }).encode(),
@@ -121,7 +125,9 @@ class Agent:
         with urllib.request.urlopen(req, timeout=120) as r:
             text = json.loads(r.read())["choices"][0]["message"]["content"]
         text = re.sub(r"\s+", " ", text).strip().strip("\"'` ")
-        return re.sub(r"^(Ben Rooted|Ivan 0day)\s*[:>|-]\s*", "", text, flags=re.I)[:260]
+        text = re.sub(r"^(Ben Rooted|Ivan 0day)\s*[:>|-]\s*", "", text, flags=re.I)[:260]
+        self.messages.append({"role": "assistant", "content": text})
+        return text
 
     def log(self, side, speaker, text):
         print(f"{side:<4} {speaker:<12} | {text}", flush=True)
@@ -136,6 +142,7 @@ class Agent:
                 "with no peer networking. DockTalk is live on the timelock channel."
             )
             self.bus.send(first)
+            self.messages.append({"role": "assistant", "content": first})
             self.log("me", self.me, first)
 
         while time.monotonic() < deadline:
@@ -201,6 +208,9 @@ You should see Ben say the first line, Ivan receive it, and then the two live
 models take turns.
 
 Both agents use `openai/gpt-oss-20b` by default.
+Each side keeps its own chat history: peer lines are `user` messages, local
+lines are `assistant` messages, and the full message array is sent to Together
+each turn.
 
 The read-only bind mount is only how both containers get the demo script. It is
 not writable and is not the chat channel. The chat channel is the lock state on
